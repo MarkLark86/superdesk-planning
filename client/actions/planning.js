@@ -303,6 +303,15 @@ const closePlanningEditor = () => (
     { type: 'CLOSE_PLANNING_EDITOR' }
 )
 
+const toggleOnlyFutureFilter = () => (
+    (dispatch, getState) => (
+        dispatch({
+            type: 'SET_ONLY_FUTURE',
+            payload: !getState().planning.onlyFuture,
+        })
+    )
+)
+
 export {
     createAgenda,
     deletePlanning,
@@ -315,4 +324,5 @@ export {
     closePlanningEditor,
     openPlanningEditorAndAgenda,
     fetchSelectedAgendaPlannings,
+    toggleOnlyFutureFilter,
 }

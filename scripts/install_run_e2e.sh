@@ -17,8 +17,8 @@ git clone https://github.com/superdesk/superdesk-core.git server-core
 git clone https://github.com/superdesk/superdesk-client-core.git client-core
 
 cd $E2E_DIR
-sed -i 's/.*superdesk-planning.git.*/-e $PLANNING_DIR/' server/requirements.txt
-sed -i -re 's/("superdesk-planning":)[^.]*(,?)/\1 "file:$PLANNING_DIR"\2/' client/package.json
+sed -i "s/.*superdesk-planning.git.*/-e $PLANNING_DIR/" server/requirements.txt
+sed -i -re "s/(\"superdesk-planning\":)[^.]*(,?)/\1 \"file:$PLANNING_DIR\"\2/" client/package.json
 cat server/requirements.txt
 cat client/package.json
 

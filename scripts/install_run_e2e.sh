@@ -25,6 +25,9 @@ sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:..\/client-core"\2/' client/
 sed -i -re 's/("superdesk-planning":)[^.]*(,?)/\1 "file:..\/..\/"\2/' client/package.json
 cat client/package.json
 
+echo "Updating superdesk.config.js to add Planning to importApps"
+sed -i "s/.*apps:*/apps: ['superdesk-planning'], importApps:/" client/superdesk.config.js
+
 # Update superdesk-client-core and superdesk-core references ton local repos
 cd $PLANNING_DIR
 ls -lah

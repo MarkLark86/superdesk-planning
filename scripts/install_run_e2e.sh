@@ -7,86 +7,55 @@ mkdir $E2E_DIR && cd $E2E_DIR
 
 git init
 git remote add origin https://github.com/superdesk/superdesk.git
-git fetch origin planning-mvp
-git checkout planning-mvp
+git fetch origin master
+git checkout master
 
-git clone https://github.com/superdesk/superdesk-core.git server-core
-git clone https://github.com/superdesk/superdesk-client-core.git client-core
+# Delete analytics and publisher from config
+sed '/.*superdesk-analytics.*/d' client/package.json
+sed -i 's/.*"superdesk-publisher": "superdesk/superdesk-publisher#master".*/"superdesk-planning": "superdesk/superdesk-planning#master"/' client/package.json
 
-# Update superdesk-core references to local repo
-echo "Updating pip references for local superdesk-core"
-sed -i 's/.*superdesk-core.git.*/-e ..\/server-core/' server/requirements.txt
-sed -i 's/.*superdesk-planning.git.*/-e ..\/..\//' server/requirements.txt
+sed -i 's/superdesk.analytics/superdesk-planning/' client/superdesk.config.js
+sed -i "s/'superdesk-analytics',/'superdesk-planning'/" client/superdesk.config.js
+sed '/.*superdesk-publisher.*/d' client/superdesk.config.js
+sed -i 's/analytics:/planning: true, assignments:/' client/superdesk.config.js
 
-echo "Removing superdesk-analytics from server requirements"
-sed '/.*superdesk-analytics.git.*/d' server/requirements.txt
-sed -i '/analytics/apps.languages/' server/settings.py
-cat server/requirements.txt
+sed '/.*superdesk-analytics.*/d' server/requirements.txt
+echo "-e ../../" >> server/requirements.txt
 
-# Update superdesk-planning references to local repo
-echo "Updating npm references for local superdesk-client-core"
-sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:..\/client-core"\2/' client/package.json
-sed -i -re 's/("superdesk-planning":)[^.]*(,?)/\1 "file:..\/..\/"\2/' client/package.json
-cat client/package.json
+sed -i 's/analytics/planning/' server/settings.py
+echo "SUPERDESK_TESTING = True" | sudo tee -a ./settings.py
+echo "DEBUG = True" | sudo tee -a ./settings.py
 
-echo "Updating superdesk.config.js to add Planning to importApps"
-sed -i "s/.*apps:*/apps: ['superdesk-planning'], importApps:/" client/superdesk.config.js
 
-# Update superdesk-client-core and superdesk-core references ton local repos
-cd $PLANNING_DIR
-ls -lah
-echo "Updating pip references for local superdesk-core"
-sed -i 's/.*superdesk-core.git.*/-e e2e\/server-core/' server/requirements.txt
-cat server/requirements.txt
+cd client
+npm --python=python2.7 install
+npm --python=python2.7 link ../../
 
-echo "Updating npm references for local superdesk-client-core"
-sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' package.json
-cat package.json
-
-# Manually install all repo node modules
-echo "Install supedesk-client-core node modules"
-cd $E2E_DIR
-cd client-core && npm install --python=python2.7
-
-echo "Install superdesk-planning node modules"
-cd $PLANNING_DIR
-npm install --python=python2.7
-
-cd $E2E_DIR
-npm install -g --python=python2.7 grunt-cli
+cd ../server
+pip install -r requirements.txt
+cd ../../
+pip install -e .
 
 export DISPLAY=:99.0 && /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1920x1080x24
 export CHROME_BIN=`which google-chrome` && $CHROME_BIN --version ;
-cd server && pip install -U -r dev-requirements.txt && cd ..
-cd client && npm install --python=python2.7 && grunt build && cd ..
+
 pwd
 ls -la
 ls -la $E2E_DIR
 ls -la $PLANNING_DIR
 sudo sed -i 's\enabled: true\enabled: false\' /etc/mongod.conf
 sudo service mongod restart
-#mkdir /tmp/es-backups
-#sudo chown elasticsearch:elasticsearch /tmp/es-backups
-#echo "path.repo: ['/tmp/es-backups']" | sudo tee -a /etc/elasticsearch/elasticsearch.yml
-#echo "index.store.type: memory" | sudo tee -a /etc/elasticsearch/elasticsearch.yml
+
 sudo service elasticsearch restart
-sleep 60
-#curl -XPUT 'http://localhost:9200/_snapshot/backups' -d '{"type": "fs", "settings": {"location": "/tmp/es-backups"}}'
+sleep 15
+
 cd $E2E_DIR/client/dist
 nohup python -m http.server 9000 &
 cd $E2E_DIR/server
-echo "SUPERDESK_TESTING = True" | sudo tee -a ./settings.py
-echo "DEBUG = True" | sudo tee -a ./settings.py
-# echo "MONGO_DBNAME = 'superdesk_e2e'" | sudo tee -a ./settings.py
-# echo "MONGO_URI = 'mongodb://localhost/%s' % MONGO_DBNAME" | sudo tee -a ./settings.py
-# echo "ELASTICSEARCH_INDEX = MONGO_DBNAME" | sudo tee -a ./settings.py
-# echo "REDIS_URL='redis://localhost:6379/2'" | sudo tee -a ./settings.py
-# echo "WEB_CONCURRENCY=3" | sudo tee -a ./settings.py
-# echo "WEB_TIMEOUT=5" | sudo tee -a ./settings.py
-# cd $PLANNING_DIR
-# cd ./node_modules/superdesk-core/test-server/
+
+
 honcho start &
-sleep 60
+sleep 15
 cd $PLANNING_DIR
 ./node_modules/.bin/webdriver-manager update --gecko=false
 ./node_modules/protractor/bin/protractor protractor.conf.js --stackTrace --verbose

@@ -33,7 +33,7 @@ sed -i 's/.*superdesk-core.git.*/-e e2e\/server-core/' server/requirements.txt
 cat server/requirements.txt
 
 echo "Updating npm references for local superdesk-client-core"
-sed -i sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' package.json
+sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' package.json
 cat package.json
 
 # Manually install all repo node modules

@@ -37,12 +37,17 @@ sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' packag
 cat package.json
 
 # Manually install all repo node modules
-#cd client-core && npm install --python=python2.7 && cd ..
-#cd ../ && npm install --python=python2.7 && cd ..
+echo "Install supedesk-client-core node modules"
+cd $E2E_DIR
+cd client-core && npm install --python=python2.7
+
+echo "Install superdesk-planning node modules"
+cd $PLANNING_DIR
+npm install --python=python2.7
 
 cd $E2E_DIR
-
 npm install -g --python=python2.7 grunt-cli
+
 export DISPLAY=:99.0 && /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1920x1080x24
 export CHROME_BIN=`which google-chrome` && $CHROME_BIN --version ;
 cd server && pip install -U -r dev-requirements.txt && cd ..

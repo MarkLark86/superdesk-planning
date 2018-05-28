@@ -14,21 +14,26 @@ git clone https://github.com/superdesk/superdesk-core.git server-core
 git clone https://github.com/superdesk/superdesk-client-core.git client-core
 
 # Update superdesk-core references to local repo
+echo "Updating pip references for local superdesk-core"
 sed -i 's/.*superdesk-core.git.*/-e ..\/server-core/' server/requirements.txt
-sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:..\/client-core"\2/' client/package.json
+sed -i 's/.*superdesk-planning.git.*/-e ..\/..\//' server/requirements.txt
+cat server/requirements.txt
 
 # Update superdesk-planning references to local repo
-sed -i 's/.*superdesk-planning.git.*/-e ..\/..\//' server/requirements.txt
+echo "Updating npm references for local superdesk-client-core"
+sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:..\/client-core"\2/' client/package.json
 sed -i -re 's/("superdesk-planning":)[^.]*(,?)/\1 "file:..\/..\/"\2/' client/package.json
-
-cat server/requirements.txt
 cat client/package.json
 
 # Update superdesk-client-core and superdesk-core references ton local repos
 cd $PLANNING_DIR
-sed -i sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' package.json
+ls -lah
+echo "Updating pip references for local superdesk-core"
 sed -i 's/.*superdesk-core.git.*/-e e2e\/server-core/' server/requirements.txt
 cat server/requirements.txt
+
+echo "Updating npm references for local superdesk-client-core"
+sed -i sed -i -re 's/("superdesk-core":)[^,]*(,?)/\1 "file:e2e\/client-core"\2/' package.json
 cat package.json
 
 # Manually install all repo node modules

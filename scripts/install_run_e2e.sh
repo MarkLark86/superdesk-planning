@@ -17,6 +17,9 @@ git clone https://github.com/superdesk/superdesk-client-core.git client-core
 echo "Updating pip references for local superdesk-core"
 sed -i 's/.*superdesk-core.git.*/-e ..\/server-core/' server/requirements.txt
 sed -i 's/.*superdesk-planning.git.*/-e ..\/..\//' server/requirements.txt
+
+echo "Removing superdesk-analytics from server requirements"
+sed '/.*superdesk-analytics.git.*/d/' server/requirements.txt
 cat server/requirements.txt
 
 # Update superdesk-planning references to local repo

@@ -45,7 +45,7 @@ var config = {
     directConnect: true,
 
     onPrepare: function() {
-        browser.ignoreSynchronization = true
+        browser.ignoreSynchronization = true;
         require('./client/spec/helpers/setup')({fixture_profile: 'app_prepopulate_data'});
 
         // so it can be used without import in tests

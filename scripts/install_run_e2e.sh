@@ -3,6 +3,7 @@ BACKEND_DIR=server
 VENV=`pwd`/$BACKEND_DIR/env/bin/activate
 PLANNING_DIR=`pwd`
 E2E_DIR=`pwd`/e2e
+SCRIPTS_DIR=`pwd`/scripts
 mkdir $E2E_DIR && cd $E2E_DIR
 
 git init
@@ -11,21 +12,11 @@ git fetch origin master
 git checkout master
 
 # Delete analytics and publisher from config
-sed '/.*superdesk-analytics.*/d' client/package.json
-sed -i 's/.*"superdesk-publisher": "superdesk/superdesk-publisher#master".*/"superdesk-planning": "superdesk/superdesk-planning#master"/' client/package.json
+cp -f $SCRIPTS_DIR/package.json client/package.json
+cp -f $SCRIPTS_DIR/superdesk.config.js client/superdesk.config.js
 
-sed -i 's/superdesk.analytics/superdesk-planning/' client/superdesk.config.js
-sed -i "s/'superdesk-analytics',/'superdesk-planning'/" client/superdesk.config.js
-sed '/.*superdesk-publisher.*/d' client/superdesk.config.js
-sed -i 's/analytics:/planning: true, assignments:/' client/superdesk.config.js
-
-sed '/.*superdesk-analytics.*/d' server/requirements.txt
-echo "-e ../../" >> server/requirements.txt
-
-sed -i 's/analytics/planning/' server/settings.py
-echo "SUPERDESK_TESTING = True" | sudo tee -a ./settings.py
-echo "DEBUG = True" | sudo tee -a ./settings.py
-
+cp -f $SCRIPTS_DIR/requirements.txt server/requirements.txt
+cp -f $SCRIPTS_DIR/settings.py server/settings.py
 
 cd client
 npm --python=python2.7 install

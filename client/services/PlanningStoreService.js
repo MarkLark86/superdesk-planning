@@ -1,6 +1,9 @@
 import {isNil, zipObject, get, isEmpty} from 'lodash';
 import {createStore} from '../utils';
 import {ITEM_TYPE} from '../constants';
+import {currentWorkspace as getCurrentWorkspace} from '../selectors/general';
+import {initStore} from '../actions';
+
 
 PlanningStoreService.$inject = [
     '$rootScope',
@@ -59,13 +62,105 @@ export function PlanningStoreService(
     let self = this;
 
     self.store = null;
+    self.loading = false;
 
-    this.getStore = function() {
-        if (isNil(self.store)) {
-            return this.createStore();
-        }
+    this.getStore = function(workspace) {
+        return new Promise((resolve, reject) => {
+            console.log('self.store', !!self.store, 'self.loading', self.loading);
 
-        return Promise.resolve(self.store);
+            if (!self.loading) {
+                console.log('Store is not currently loading....');
+                if (!isNil(self.store)) {
+                    console.log('Store is already loaded');
+                    return resolve(self.store);
+                } else {
+                    console.log('Loading the store');
+                    this.createStore()
+                        .then((store) => resolve(store));
+                }
+            } else {
+                console.log('Store is currently loading, please wait....');
+                let interval;
+
+                const isStoreAvailable = () => {
+                    console.log('Checking if the store is ready:');
+                    if (!isNil(self.store) && !self.loading) {
+                        console.log('\tStore is ready');
+                        window.clearInterval(interval);
+                        resolve(self.store);
+                        return true;
+                    }
+                    console.log('\tStore is not ready');
+                };
+
+                if (isStoreAvailable() === true) {
+                    // make sure it doesn't register an interval if it resolves on the first go
+                    return true;
+                }
+
+                interval = setInterval(isStoreAvailable, 100);
+                setTimeout(() => {
+                    console.log('Timed out while waiting for the store');
+                    clearInterval(interval);
+                    reject('timed out while trying to create the Redux Store');
+                }, 1000 * 60);
+            }
+
+
+            // if (!isNil(self.store) && !self.loading) {
+            //     console.log('Store is already loaded');
+            //     return resolve(self.store);
+            // } else if (isNil(self.store) && !self.loading) {
+            //     console.log('Loading store');
+            //     self.loading = true;
+            //     this.createStore()
+            //         .then((store) => resolve(store));
+            //     return true;
+            // }
+
+            // console.log('Store is currently loading, please wait....');
+            // let interval;
+            //
+            // const isStoreAvailable = () => {
+            //     console.log('Checking if the store is ready:');
+            //     if (!isNil(self.store) && !self.loading) {
+            //         console.log('\tStore is ready');
+            //         window.clearInterval(interval);
+            //         resolve(self.store);
+            //         return true;
+            //     }
+            //     console.log('\tStore is not ready');
+            // };
+            //
+            // if (isStoreAvailable() === true) {
+            //     // make sure it doesn't register an interval if it resolves on the first go
+            //     return true;
+            // }
+            //
+            // interval = setInterval(isStoreAvailable, 100);
+            // setTimeout(() => {
+            //     console.log('Timed out while waiting for the store');
+            //     clearInterval(interval);
+            //     reject('timed out while trying to create the Redux Store');
+            // }, 1000 * 60);
+
+            // console.log('Store already loaded');
+            // return Promise.resolve(self.store);
+        })
+            .then((store) => {
+                self.loading = false;
+                self.store = store;
+
+                const currentWorkspace = getCurrentWorkspace(self.store.getState());
+
+                if (currentWorkspace === workspace) {
+                    return Promise.reject('current workspace is the same');
+                }
+
+                store.dispatch(initStore(workspace));
+                console.log('Current workspace is not set or is different');
+                return Promise.resolve(self.store);
+            });
     };
 
     this.createStore = function() {
@@ -154,7 +249,7 @@ export function PlanningStoreService(
             });
 
             // create the application store
-            self.store = createStore({
+            const store = createStore({
                 initialState: initialState,
                 extraArguments: {
                     api: api,
@@ -182,7 +277,7 @@ export function PlanningStoreService(
                     preferencesService: preferencesService,
                 },
             });
-            return self.store;
+            return store;
         });
     };
 

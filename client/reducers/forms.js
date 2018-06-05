@@ -24,12 +24,13 @@ const newStateOnEditorOpen = (state, payload, modal = false) => {
 
     // If this is a new item, then initialValues will always be
     // type/id until the item is created
-    const initialValues = !isTemporaryId(itemId) ?
-        payload :
-        {
-            _id: itemId,
-            type: itemType,
-        };
+    const initialValues = payload;
+    // const initialValues = !isTemporaryId(itemId) ?
+    //     payload :
+    //     {
+    //         _id: itemId,
+    //         type: itemType,
+    //     };
 
     if (modal) {
         return {
@@ -97,11 +98,13 @@ const formsReducer = createReducer(initialState, {
         const newState = cloneDeep(state);
         const autosaves = get(newState, `autosaves.${payload.type}`);
 
-        if (payload.type === ITEM_TYPE.EVENT) {
-            autosaves[payload._id] = eventUtils.convertToMoment(payload);
-        } else if (payload.type === ITEM_TYPE.PLANNING) {
-            autosaves[payload._id] = planningUtils.convertCoveragesGenreToObject(payload);
-        }
+        autosaves[payload._id] = cloneDeep(payload);
+
+        // if (payload.type === ITEM_TYPE.EVENT) {
+        //     autosaves[payload._id] = eventUtils.convertToMoment(payload);
+        // } else if (payload.type === ITEM_TYPE.PLANNING) {
+        //     autosaves[payload._id] = planningUtils.convertCoveragesGenreToObject(payload);
+        // }
 
         return newState;
     },
@@ -113,17 +116,22 @@ const formsReducer = createReducer(initialState, {
         const autosaves = get(newState.autosaves, itemType);
         const autosaveData = get(autosaves, itemId) || {_id: itemId};
 
-        if (itemType === ITEM_TYPE.EVENT) {
-            autosaves[itemId] = eventUtils.convertToMoment({
-                ...autosaveData,
-                ...payload.item,
-            });
-        } else if (itemType === ITEM_TYPE.PLANNING) {
-            autosaves[itemId] = planningUtils.convertCoveragesGenreToObject({
-                ...autosaveData,
-                ...payload.item,
-            });
-        }
+        autosaves[itemId] = {
+            ...autosaveData,
+            ...payload.item,
+        };
+
+        // if (itemType === ITEM_TYPE.EVENT) {
+        //     autosaves[itemId] = eventUtils.convertToMoment({
+        //         ...autosaveData,
+        //         ...payload.item,
+        //     });
+        // } else if (itemType === ITEM_TYPE.PLANNING) {
+        //     autosaves[itemId] = planningUtils.convertCoveragesGenreToObject({
+        //         ...autosaveData,
+        //         ...payload.item,
+        //     });
+        // }
 
         return newState;
     },
@@ -150,11 +158,12 @@ const formsReducer = createReducer(initialState, {
         const items = {};
 
         payload.autosaves.forEach((item) => {
-            if (payload.itemType === ITEM_TYPE.EVENT) {
-                items[item._id] = eventUtils.convertToMoment(item);
-            } else if (payload.itemType === ITEM_TYPE.PLANNING) {
-                items[item._id] = planningUtils.convertCoveragesGenreToObject(item);
-            }
+            items[item._id] = item;
+            // if (payload.itemType === ITEM_TYPE.EVENT) {
+            //     items[item._id] = eventUtils.convertToMoment(item);
+            // } else if (payload.itemType === ITEM_TYPE.PLANNING) {
+            //     items[item._id] = planningUtils.convertCoveragesGenreToObject(item);
+            // }
         });
 
         return {

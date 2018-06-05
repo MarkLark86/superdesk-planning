@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-import {get, isEqual, cloneDeep, omit, pickBy} from 'lodash';
+import {get, isEqual, cloneDeep, omit, pickBy, throttle} from 'lodash';
 
 import {
     gettext,
@@ -14,17 +14,19 @@ import {
     isItemKilled,
     isTemporaryId,
     getItemId,
+    getItemType,
 } from '../../../utils';
 import {EventUpdateMethods} from '../../Events';
 
-import {ITEM_TYPE, EVENTS, PLANNING, POST_STATE, WORKFLOW_STATE, COVERAGES} from '../../../constants';
+import {ITEM_TYPE, EVENTS, PLANNING, POST_STATE, WORKFLOW_STATE, COVERAGES, AUTOSAVE} from '../../../constants';
 
 import {Tabs as NavTabs} from '../../UI/Nav';
 import {SidePanel, Content} from '../../UI/SidePanel';
 
 import {EditorHeader, EditorContentTab} from './index';
 import {HistoryTab} from '../index';
-import {Autosave} from '../../index';
+// import {Autosave} from '../../index';
+import Autosave from './Autosave';
 
 export class EditorComponent extends React.Component {
     constructor(props) {
@@ -59,6 +61,18 @@ export class EditorComponent extends React.Component {
         this.flushAutosave = this.flushAutosave.bind(this);
         this.cancelFromHeader = this.cancelFromHeader.bind(this);
 
+        this.autosave = new Autosave(
+            this.onChangeHandler,
+            AUTOSAVE.INTERVAL,
+            props.saveAutosave,
+            props.loadAutosave
+        );
+
+        // this.saveAutosave = this.saveAutosave.bind(this);
+        // this._saveAutosave = this.saveAutosave.bind(this);
+        // this.loadAutosave = this.loadAutosave.bind(this);
+        // this.throttledSave = null;
+
         this.tabs = [
             {label: gettext('Content'), render: EditorContentTab, enabled: true},
             {label: gettext('History'), render: HistoryTab, enabled: true},
@@ -92,17 +106,25 @@ export class EditorComponent extends React.Component {
     }
 
     loadItem(itemId, itemType) {
-        if (isTemporaryId(itemId)) {
-            this.setState({itemReady: true});
-        } else {
-            this.setState({itemRead: false}, () => {
-                this.props.loadItem(itemId, itemType)
-                    .then(() => this.setState({itemReady: true}));
-            });
-        }
+        this.setState({itemReady: false}, () => {
+            this.props.loadItem(itemId, itemType)
+                .then(() => this.autosave.load(itemType, itemId))
+                .then(() => this.setState({itemReady: true}));
+        });
+
+        // if (isTemporaryId(itemId)) {
+        //     this.setState({itemReady: false})
+        //     this.setState({itemReady: true});
+        // } else {
+        //     this.setState({itemRead: false}, () => {
+        //         this.props.loadItem(itemId, itemType)
+        //             .then(() => this.autosave.load(itemType, itemId))
+        //             .then(() => this.setState({itemReady: true}));
+        //     });
+        // }
     }
 
-    resetForm(item = null, dirty = false) {
+    resetForm(item = null, dirty = false, loadItem = false) {
         this.setState({
             diff: item === null ? {} : cloneDeep(item),
             dirty: dirty,
@@ -110,6 +132,13 @@ export class EditorComponent extends React.Component {
             errors: {},
             errorMessages: [],
             itemReady: true,
+        }, () => {
+            const itemId = getItemId(item);
+            const itemType = getItemType(item);
+
+            if (loadItem && itemId && itemType) {
+                this.loadItem(itemId, itemType);
+            }
         });
 
         this.tabs[0].label = get(item, 'type') === ITEM_TYPE.EVENT ?
@@ -118,29 +147,40 @@ export class EditorComponent extends React.Component {
     }
 
     createNew(props) {
-        const itemId = getItemId(props.initialValues);
+        // const itemId = getItemId(props.initialValues);
 
-        if (props.itemType === ITEM_TYPE.EVENT) {
-            if (isEqual(omit(props.initialValues, '_id'), {type: ITEM_TYPE.EVENT})) {
-                this.resetForm({
-                    ...EVENTS.DEFAULT_VALUE(props.occurStatuses),
-                    _id: itemId,
-                });
-            } else {
-                this.resetForm(props.initialValues, true);
-            }
-        } else if (props.itemType === ITEM_TYPE.PLANNING) {
-            if (isEqual(omit(props.initialValues, '_id'), {type: ITEM_TYPE.PLANNING})) {
-                this.resetForm({
-                    ...PLANNING.DEFAULT_VALUE,
-                    _id: itemId,
-                });
-            } else {
-                this.resetForm(props.initialValues, true);
-            }
+        if (props.itemType === ITEM_TYPE.EVENT || props.itemType === ITEM_TYPE.PLANNING) {
+            this.resetForm(props.initialValues, isExistingItem(props.initialValues), true);
         } else {
             this.resetForm();
         }
+
+        // if (props.itemType === ITEM_TYPE.EVENT) {
+        //
+        //     if (get(props, 'initialValues._newItem')) {
+        //         this.resetForm(props.initialValues, false)
+        //     }
+        //
+        //     if (isEqual(omit(props.initialValues, '_id'), {type: ITEM_TYPE.EVENT})) {
+        //         this.resetForm({
+        //             ...EVENTS.DEFAULT_VALUE(props.occurStatuses),
+        //             _id: itemId,
+        //         });
+        //     } else {
+        //         this.resetForm(props.initialValues, true);
+        //     }
+        // } else if (props.itemType === ITEM_TYPE.PLANNING) {
+        //     if (isEqual(omit(props.initialValues, '_id'), {type: ITEM_TYPE.PLANNING})) {
+        //         this.resetForm({
+        //             ...PLANNING.DEFAULT_VALUE(),
+        //             _id: itemId,
+        //         });
+        //     } else {
+        //         this.resetForm(props.initialValues, true);
+        //     }
+        // } else {
+        //     this.resetForm();
+        // }
     }
 
     onItemIDChanged(nextProps) {
@@ -209,7 +249,7 @@ export class EditorComponent extends React.Component {
         );
     }
 
-    onChangeHandler(field, value, updateDirtyFlag = true) {
+    onChangeHandler(field, value, updateDirtyFlag = true, saveAutosave = true) {
         // If field (name) is passed, it will replace that field
         // Else, entire object will be replaced
         const diff = field ? Object.assign({}, this.state.diff) : cloneDeep(value);
@@ -238,6 +278,10 @@ export class EditorComponent extends React.Component {
 
         if (this.props.onChange) {
             this.props.onChange(diff);
+        }
+
+        if (saveAutosave) {
+            this.autosave.save(diff);
         }
     }
 
@@ -392,9 +436,10 @@ export class EditorComponent extends React.Component {
     }
 
     flushAutosave() {
-        if (get(this.dom, 'autosave.flush')) {
-            this.dom.autosave.flush();
-        }
+        this.autosave.flush();
+        // if (get(this.dom, 'autosave.flush')) {
+        //     this.dom.autosave.flush();
+        // }
     }
 
     cancelFromHeader() {
@@ -452,32 +497,33 @@ export class EditorComponent extends React.Component {
         }
     }
 
-    renderAutosave() {
-        if (!this.props.addNewsItemToPlanning &&
-            !this.props.isLoadingItem &&
-            this.props.itemType &&
-            this.state.itemReady
-        ) {
-            return (
-                <Autosave
-                    formName={this.props.itemType}
-                    initialValues={this.props.item ?
-                        cloneDeep(this.props.item) :
-                        cloneDeep(this.props.initialValues)
-                    }
-                    currentValues={cloneDeep(this.state.diff)}
-                    change={this.onChangeHandler}
-                    ref={(node) => this.dom.autosave = node}
-                    save={this.props.saveAutosave}
-                    load={this.props.loadAutosave}
-                    inModalView={this.props.inModalView}
-                    submitting={this.state.submitting}
-                />
-            );
-        }
-
-        return null;
-    }
+    // renderAutosave(isReadOnly) {
+    //     if (!this.props.addNewsItemToPlanning &&
+    //         !this.props.isLoadingItem &&
+    //         this.props.itemType &&
+    //         this.state.itemReady &&
+    //         !isReadOnly
+    //     ) {
+    //         return (
+    //             <Autosave
+    //                 formName={this.props.itemType}
+    //                 initialValues={this.props.item ?
+    //                     cloneDeep(this.props.item) :
+    //                     cloneDeep(this.props.initialValues)
+    //                 }
+    //                 currentValues={cloneDeep(this.state.diff)}
+    //                 change={this.onChangeHandler}
+    //                 ref={(node) => this.dom.autosave = node}
+    //                 save={this.props.saveAutosave}
+    //                 load={this.props.loadAutosave}
+    //                 inModalView={this.props.inModalView}
+    //                 submitting={this.state.submitting}
+    //             />
+    //         );
+    //     }
+    //
+    //     return null;
+    // }
 
     canEdit() {
         if (this.props.itemType === ITEM_TYPE.EVENT) {
@@ -500,23 +546,23 @@ export class EditorComponent extends React.Component {
         return false;
     }
 
-    renderContent() {
-        const existingItem = isExistingItem(this.props.item);
-        const itemLock = lockUtils.getLock(this.props.item, this.props.lockedItems);
-        const isLockRestricted = lockUtils.isLockRestricted(
-            this.props.item,
-            this.props.session,
-            this.props.lockedItems
-        );
-
-        let canEdit = this.canEdit();
-
-        const isReadOnly = existingItem && (
-            !canEdit ||
-            !itemLock ||
-            isLockRestricted ||
-            get(itemLock, 'action') !== 'edit'
-        );
+    renderContent(existingItem, isReadOnly) {
+        // const existingItem = isExistingItem(this.props.item);
+        // const itemLock = lockUtils.getLock(this.props.item, this.props.lockedItems);
+        // const isLockRestricted = lockUtils.isLockRestricted(
+        //     this.props.item,
+        //     this.props.session,
+        //     this.props.lockedItems
+        // );
+        //
+        // let canEdit = this.canEdit();
+        //
+        // const isReadOnly = existingItem && (
+        //     !canEdit ||
+        //     !itemLock ||
+        //     isLockRestricted ||
+        //     get(itemLock, 'action') !== 'edit'
+        // );
 
         const RenderTab = this.tabs[this.state.tab].enabled ? this.tabs[this.state.tab].render :
             this.tabs[0].render;
@@ -562,9 +608,26 @@ export class EditorComponent extends React.Component {
             return null;
         }
 
+        const existingItem = isExistingItem(this.props.item);
+        const itemLock = lockUtils.getLock(this.props.item, this.props.lockedItems);
+        const isLockRestricted = lockUtils.isLockRestricted(
+            this.props.item,
+            this.props.session,
+            this.props.lockedItems
+        );
+
+        let canEdit = this.canEdit();
+
+        const isReadOnly = existingItem && (
+            !canEdit ||
+            !itemLock ||
+            isLockRestricted ||
+            get(itemLock, 'action') !== 'edit'
+        );
+
         return (
             <SidePanel shadowRight={true} className={this.props.className}>
-                {this.renderAutosave()}
+                {/*{this.renderAutosave(isReadOnly)}*/}
                 <EditorHeader
                     item={this.props.item}
                     diff={this.state.diff}
@@ -603,7 +666,7 @@ export class EditorComponent extends React.Component {
                     hideExternalEdit={this.props.hideExternalEdit}
                     flushAutosave={this.flushAutosave}
                 />
-                {this.renderContent()}
+                {this.renderContent(existingItem, isReadOnly)}
             </SidePanel>
         );
     }

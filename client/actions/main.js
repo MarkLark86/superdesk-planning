@@ -1,4 +1,4 @@
-import {MAIN, ITEM_TYPE, MODALS, WORKSPACE, WORKFLOW_STATE, POST_STATE} from '../constants';
+import {MAIN, ITEM_TYPE, MODALS, WORKSPACE, WORKFLOW_STATE, POST_STATE, EVENTS, PLANNING} from '../constants';
 import {activeFilter, lastRequestParams} from '../selectors/main';
 import planningUi from './planning/ui';
 import planningApi from './planning/api';
@@ -32,11 +32,23 @@ import * as selectors from '../selectors';
 import {validateItem} from '../validators';
 
 const createNew = (itemType) => (
-    (dispatch) => {
-        const newItem = {
-            _id: generateTempId(),
-            type: itemType,
-        };
+    (dispatch, getState) => {
+        let newItem;
+
+        if (itemType === ITEM_TYPE.EVENT) {
+            const occurStatuses = selectors.vocabs.eventOccurStatuses(getState());
+            const defaultCalendars = selectors.events.defaultCalendarValue(getState());
+
+            newItem = {
+                _id: generateTempId(),
+                ...EVENTS.DEFAULT_VALUE(occurStatuses, defaultCalendars),
+            };
+        } else if (itemType === ITEM_TYPE.PLANNING) {
+            newItem = {
+                _id: generateTempId(),
+                ...PLANNING.DEFAULT_VALUE(),
+            };
+        }
 
         dispatch(autosave.save(newItem, 'create', false));
         return dispatch(self.lockAndEdit(newItem));

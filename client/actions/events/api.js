@@ -1250,13 +1250,14 @@ const _save = (eventUpdates) => (
                 }
             }
 
+            // Moved to constants.EVENTS.DEFAULT_VALUE function
             // save the timezone. This is useful for recurring events
-            if (updates.dates) {
-                updates.dates.tz = moment.tz.guess();
-            }
+            // if (updates.dates) {
+            //     updates.dates.tz = moment.tz.guess();
+            // }
 
             original.location = original.location ? [original.location] : null;
-            updates.location = updates.location ? [updates.location] : null;
+            updates.location = updates.location ? [updates.location] : [];
 
             // remove all properties starting with _
             // and updates that are the same as original

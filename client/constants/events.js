@@ -1,4 +1,7 @@
+import moment from 'moment';
+
 import {gettext} from '../utils/gettext';
+import {ITEM_TYPE} from './';
 
 export const EVENTS = {
     ACTIONS: {
@@ -100,10 +103,15 @@ export const EVENTS = {
             lock_action: 'edit',
         },
     },
-    DEFAULT_VALUE: (occurStatuses) => ({
-        type: 'event',
+    DEFAULT_VALUE: (occurStatuses, defaultCalendars) => ({
+        type: ITEM_TYPE.EVENT,
         occur_status: occurStatuses[5], // eocstat:eos5: Planned, occurs certainly
-        dates: {},
+        dates: {
+            start: null,
+            end: null,
+            tz: moment.tz.guess(),
+        },
+        calendars: defaultCalendars,
     }),
     FILTER: {
         NO_CALENDAR_ASSIGNED: 'NO_CALENDAR_ASSIGNED',

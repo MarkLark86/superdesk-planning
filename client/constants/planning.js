@@ -1,5 +1,7 @@
 import moment from 'moment';
+
 import {gettext} from '../utils/gettext';
+import {ITEM_TYPE} from './';
 
 export const PLANNING = {
     ACTIONS: {
@@ -89,8 +91,8 @@ export const PLANNING = {
         AUDIO: gettext('audio'),
         PICTURE: gettext('picture'),
     },
-    DEFAULT_VALUE: {
-        type: 'planning',
+    DEFAULT_VALUE: () => ({
+        type: ITEM_TYPE.PLANNING,
         planning_date: moment(),
-    },
+    }),
 };

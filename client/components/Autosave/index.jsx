@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {forEach, isEqual, get, throttle, cloneDeep, isEmpty} from 'lodash';
+import {forEach, isEqual, get, throttle, cloneDeep, isEmpty, pickBy} from 'lodash';
 import moment from 'moment';
 
 import {AUTOSAVE} from '../../constants';
@@ -152,11 +152,26 @@ export class Autosave extends React.Component {
         } else if (getItemId(currentValues) !== getItemId(nextValues)) {
             // If the form item has changed, then reset this autosave
             this.reset(nextProps);
-        } else if (!isEqual(currentValues, nextValues)) {
+        } else if (!this.itemsEqual(currentValues, nextValues)) {
+        // } else if (!isEqual(currentValues, nextValues)) {
             // If the item's values have changed,
             // Then save the new values in the store
             this.save(nextValues, nextProps);
         }
+    }
+
+    itemsEqual(nextItem, currentItem) {
+        const pickField = (value, key) => (
+            !key.startsWith('_') &&
+                !key.startsWith('lock_') &&
+                value !== null &&
+                value !== undefined
+        );
+
+        return isEqual(
+            pickBy(nextItem, pickField),
+            pickBy(currentItem, pickField)
+        );
     }
 
     componentWillUnmount() {

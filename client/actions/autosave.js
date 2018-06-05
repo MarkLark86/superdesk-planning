@@ -99,27 +99,20 @@ const save = (item, action = 'edit', saveToServer = true) => (
         ) || {};
 
         // Merge the original autosave item (if any) with the new changes
-        const autosaveItem = {
+        let autosaveItem = {
             ...originalAutosave,
-            ...pickBy(item, (value, key) => (
-                key === '_planning_item' ||
-                key === '_id' ||
-                !key.startsWith('_')
-            )),
+            ...item,
+            // ...pickBy(item, (value, key) => (
+            //     key === '_planning_item' ||
+            //     key === '_id' ||
+            //     !key.startsWith('_')
+            // )),
             // Set the lock_ fields to the current user/session/time
             lock_action: get(originalAutosave, 'lock_action') || action,
             lock_user: selectors.general.currentUserId(getState()),
             lock_session: selectors.general.sessionId(getState()),
             lock_time: get(originalAutosave, 'lock_time') || moment(),
         };
-
-        if (itemType === ITEM_TYPE.EVENT) {
-            autosaveItem.location = autosaveItem.location ? [autosaveItem.location] : [];
-
-            if (autosaveItem._planning_item === null) {
-                delete autosaveItem._planning_item;
-            }
-        }
 
         // Push the changes to the local redux
         dispatch({
@@ -130,6 +123,23 @@ const save = (item, action = 'edit', saveToServer = true) => (
         if (!saveToServer) {
             return Promise.resolve(autosaveItem);
         }
+
+        // if (itemType === ITEM_TYPE.EVENT) {
+        //     if (autosaveItem.location) {
+        //         if (!Array.isArray(autosaveItem.location)) {
+        //             autosaveItem.location = [autosaveItem.location];
+        //         }
+        //     }
+        //
+        //     if (autosaveItem._planning_item === null) {
+        //         delete autosaveItem._planning_item;
+        //     }
+        // }
+
+        // autosaveItem = pickBy(autosaveItem, (value, key) => (
+        //     (key === '_planning_item' || key === '_id' || !key.startsWith('_')) &&
+        //     key !== 'planning_ids'
+        // ));
 
         return api(`${itemType}_autosave`).save(originalAutosave, autosaveItem)
             .then((updatedAutosave) => {

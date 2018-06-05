@@ -48,12 +48,15 @@ export class EventEditorComponent extends React.Component {
     }
 
     componentWillMount() {
-        if (!this.props.itemExists) {
-            this.props.onChangeHandler('calendars', this.props.defaultCalendar, false);
-        } else {
-            // Get the event with files with it
+        if (this.props.itemExists) {
             this.props.fetchEventWithFiles(this.props.item);
         }
+        // if (!this.props.itemExists) {
+        //     this.props.onChangeHandler('calendars', this.props.defaultCalendar, false);
+        // } else {
+        //     // Get the event with files with it
+        //     this.props.fetchEventWithFiles(this.props.item);
+        // }
     }
 
     componentDidMount() {
@@ -71,9 +74,10 @@ export class EventEditorComponent extends React.Component {
         if ((prevItemId !== currentItemId) ||
             (!get(prevProps, 'diff.lock_user') && get(this.props, 'diff.lock_user'))) {
             this.dom.slugline.focus();
-        } else if (prevDiffId !== currentDiffId && isTemporaryId(currentDiffId)) {
-            this.props.onChangeHandler('calendars', this.props.defaultCalendar, false);
         }
+        // } else if (prevDiffId !== currentDiffId && isTemporaryId(currentDiffId)) {
+        //     this.props.onChangeHandler('calendars', this.props.defaultCalendar, false);
+        // }
 
         if (get(prevProps, 'navigation.scrollToViewItem') !== get(this.props, 'navigation.scrollToViewItem')) {
             // scroll to new position
@@ -212,7 +216,8 @@ export class EventEditorComponent extends React.Component {
                         component={SelectInput}
                         field="occur_status"
                         label={gettext('Occurrence Status')}
-                        defaultValue={EVENTS.DEFAULT_VALUE(occurStatuses).occur_status}
+                        // defaultValue={EVENTS.DEFAULT_VALUE(occurStatuses).occur_status}
+                        defaultValue={null}
                         options={occurStatuses}
                         {...fieldProps}
                         onFocus={onFocusEvent}

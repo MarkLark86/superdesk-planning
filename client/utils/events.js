@@ -642,9 +642,10 @@ const convertToMoment = (item) => {
         },
     };
 
-    if (get(item, 'location[0]')) {
-        newItem.location = item.location[0];
-    }
+    newItem.location = get(item, 'location[0]') || null;
+    // if (get(item, 'location[0]')) {
+    //     newItem.location = item.location[0];
+    // }
 
     return newItem;
 };

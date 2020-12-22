@@ -51,6 +51,17 @@ class ElasticQuery:
 
         return query
 
+    def extend_query(self, query: Dict[str, Any]):
+        def _extend(key: str):
+            conditions = ((query.get('query') or {}).get('bool') or {}).get(key) or []
+            if len(conditions):
+                self.__dict__[key].extend(conditions)
+
+        _extend('must')
+        _extend('must_not')
+        _extend('filter')
+        _extend('should')
+
 
 class DateRanges(NamedTuple):
     TODAY: str
@@ -242,8 +253,8 @@ def range_tomorrow(query: ElasticRangeParams):
         field=query.field,
         time_zone=query.time_zone,
         value_format=query.value_format,
-        gte='now+24/d',
-        lt='now+48/d',
+        gte='now+24h/d',
+        lt='now+48h/d',
     ))
 
 

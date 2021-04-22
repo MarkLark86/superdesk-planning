@@ -1,5 +1,9 @@
 # Superdesk Planning Changelog
 
+## [2.1.4-rc.1] 2021-04-22
+### Fixes
+- [SDCP-518] fix(unpost): References all Events if recurrence_id==null (#1568)
+
 ## [2.1.3] 2021-03-10
 ### Fixes
 - [SDCP-480] fix(search): Exceptions raised when search by urgency (#1556)

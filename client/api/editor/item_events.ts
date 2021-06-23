@@ -24,7 +24,7 @@ export function getEventsInstance(type: EDITOR_TYPE): IEditorAPI['item']['events
         const {gettext} = superdeskApi.localization;
         const profile = planningApi.events.getEditorProfile();
 
-        return {
+        const groups: {[key: string]: IEditorFormGroup} = {
             schedule: {
                 id: 'schedule',
                 index: 0,
@@ -83,14 +83,19 @@ export function getEventsInstance(type: EDITOR_TYPE): IEditorAPI['item']['events
                     'links',
                 ]),
             },
-            'add-planning': {
+        };
+
+        if (superdeskApi.privileges.hasPrivilege('planning_planning_management')) {
+            groups['add-planning'] = {
                 id: 'add-planning',
                 index: 6,
                 fields: filterProfileForEnabledFields(profile, [
                     'related_plannings',
                 ]),
-            },
-        };
+            };
+        }
+
+        return groups;
     }
 
     function getGroupsForItem(item: Partial<IEventItem>): {
@@ -99,6 +104,7 @@ export function getEventsInstance(type: EDITOR_TYPE): IEditorAPI['item']['events
     } {
         const {gettext} = superdeskApi.localization;
         const groups = getGroups();
+        const canCreatePlanningItems = superdeskApi.privileges.hasPrivilege('planning_planning_management');
 
         return {
             bookmarks: [{
@@ -164,11 +170,13 @@ export function getEventsInstance(type: EDITOR_TYPE): IEditorAPI['item']['events
                 type: BOOKMARK_TYPE.custom,
                 index: 7,
                 component: AddPlanningBookmark,
+                disabled: !canCreatePlanningItems,
             }, {
                 id: 'associated_plannings',
                 type: BOOKMARK_TYPE.custom,
                 index: 8,
                 component: AssociatedPlanningsBookmark,
+                disabled: !canCreatePlanningItems,
             }],
             groups: Object.values(groups),
         };

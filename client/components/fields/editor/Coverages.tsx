@@ -19,7 +19,7 @@ export class EditorFieldCoverages extends React.PureComponent<IPropsEditorFieldC
                 testId="field-coverages"
                 field={this.props.field ?? 'coverages'}
                 value={value}
-                readOnly={this.props.readOnly}
+                readOnly={this.props.readOnly || this.props.disabled}
                 addButtonText={this.props.addButtonText ?? gettext('Add a coverage')}
                 createUploadLink={getFileDownloadURL}
             />

@@ -14,6 +14,7 @@ import {PreviewFieldCustomVocabularies} from './CustomVocabularies';
 import {PreviewFieldUrgency} from './Urgency';
 import {PreviewFieldFlags} from './Flags';
 import {PreviewFieldRelatedArticles} from './RelatedArticles';
+import {PreviewFieldCoverageMultipleContent} from './CoverageMultipleContent';
 
 import * as selectors from '../../../selectors';
 import {planningUtils} from '../../../utils';
@@ -317,6 +318,9 @@ FIELD_TO_FORM_PREVIEW_COMPONENT.flags = PreviewFieldFlags;
 
 FIELD_TO_FORM_PREVIEW_COMPONENT.related_items = PreviewFieldRelatedArticles;
 FIELD_TO_PREVIEW_COMPONENT.related_items = PreviewFieldRelatedArticles;
+
+FIELD_TO_FORM_PREVIEW_COMPONENT.multiple_content = PreviewFieldCoverageMultipleContent;
+FIELD_TO_PREVIEW_COMPONENT.multiple_content = PreviewFieldCoverageMultipleContent;
 
 export {
     FIELD_TO_PREVIEW_COMPONENT,

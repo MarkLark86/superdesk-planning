@@ -341,6 +341,7 @@ const PREVIEW_GROUPS: IPreviewGroups = {
             'keyword',
             'internal_note',
             'g2_content_type',
+            'multiple_content',
             'genre',
             'news_coverage_status',
             'scheduled',

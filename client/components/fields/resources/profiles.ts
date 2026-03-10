@@ -141,6 +141,17 @@ registerEditorField(
 );
 
 registerEditorField(
+    'field.timezone_required.enabled',
+    EditorFieldToggle,
+    () => ({
+        label: superdeskApi.localization.gettext('Timezone Required'),
+        field: 'field.timezone_required.enabled',
+    }),
+    null,
+    true,
+);
+
+registerEditorField(
     'field.default_duration_on_change',
     EditorFieldNumber,
     () => ({

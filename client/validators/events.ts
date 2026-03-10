@@ -2,6 +2,7 @@ import moment from 'moment';
 import {get, set, isEmpty, isEqual, pick} from 'lodash';
 
 import {appConfig} from 'appConfig';
+import {planningApi} from '../superdeskApi';
 
 import {gettext, eventUtils, timeUtils} from '../utils';
 import * as selectors from '../selectors';
@@ -20,9 +21,13 @@ const validateRequiredDates = ({value, errors, messages, diff}) => {
         messages.push(gettext('END DATE is a required field'));
     }
 
-    if (value.tz === undefined) {
-        set(errors, 'tz', gettext('This field is required'));
-        messages.push(gettext('TIMEZONE is a required field'));
+    const eventProfile = planningApi.contentProfiles.get('event');
+
+    if (eventProfile && eventProfile.editor.dates?.timezone_required?.enabled === true) {
+        if (value.all_day !== true && value.tz === undefined) {
+            errors.tz = gettext('This field is required');
+            messages.push(gettext('TIMEZONE is a required field'));
+        }
     }
 
     if (value.all_day === true && value.no_end_time === false) {

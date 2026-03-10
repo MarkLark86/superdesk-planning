@@ -72,6 +72,7 @@ DEFAULT_EVENT_PROFILE = {
             "index": 2,
             "default_duration_on_change": 1,
             "all_day": {"enabled": True},
+            "timezone_required": {"enabled": False},
         },
         # Description Group
         "language": {
